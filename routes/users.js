@@ -5,6 +5,7 @@ const passport = require('passport');
 const LocalStrategy = require('passport-local').Strategy;
 const User = require('../models/user');
 
+
 router.get('/register', (req, res) => {
   res.render('register');
 });
@@ -13,7 +14,7 @@ router.get('/login', (req, res) => {
   res.render('login');
 });
 
-router.post('/register', (req, res) => {
+router.post('/register', async (req, res) => {
   const {
     name, email, username, password,
   } = req.body;
@@ -38,34 +39,35 @@ router.post('/register', (req, res) => {
       activities: [],
     });
 
-    User.createUser(newUser, (err, user) => {
-      if (err) {
-        req.flash('error_msg', 'User with such data is registered');
-        return res.redirect('/users/register');
-      }
+    try {
+      await User.createUser(newUser);
       req.flash('success_msg', 'You are registered and can login now!');
 
       res.redirect('/users/login');
-    });
+    } catch (error) {
+      req.flash('error_msg', 'User with such data is registered');
+      res.redirect('/users/register');
+    }
   }
 });
 
-passport.use(new LocalStrategy(((username, password, done) => {
-  User.getUserByUsername(username, (err, user) => {
-    if (err) throw err;
+passport.use(new LocalStrategy((async (username, password, done) => {
+  try {
+    const user = await User.getUserByUsername(username);
 
     if (!user) {
       return done(null, false, { message: 'Unknown User' });
     }
 
-    User.comparePassword(password, user.password, (err, isMatch) => {
-      if (err) throw err;
-      if (isMatch) {
-        return done(null, user);
-      }
-      return done(null, false, { message: 'Invalid password' });
-    });
-  });
+    const isMatch = await User.comparePassword(password, user.password);
+
+    if (isMatch) {
+      return done(null, user);
+    }
+    return done(null, false, { message: 'Invalid password' });
+  } catch (error) {
+    console.error(error.message);
+  }
 })));
 
 passport.serializeUser((user, done) => {
@@ -94,15 +96,27 @@ router.get('/logout', (req, res) => {
   res.redirect('/users/login');
 });
 
-router.post('/addActivity', (req, res) => {
-  User.addActivity(req.user.username, req.body.activity, (err) => {
-    if (err) {
-      req.flash('error_msg', 'Something wrong(');
-      return res.redirect('/');
-    }
-    req.flash('success_msg', 'Success add!');
+router.post('/addActivity', async (req, res) => {
+  try {
+    await User.addActivity(req.user.username, req.body.activity);
+    req.flash('success_msg', `Success add ${req.body.activity}!`);
     res.redirect('/');
-  });
+  } catch (error) {
+    console.err(`${error.code} : ${error.message}`);
+    req.flash('error_msg', 'Error adding activity');
+  }
+});
+
+router.get('/changeActivityStatus', (req, res) => {
+  // User.changeActivityStatus(req.user.username, req.body.activity, req.body.isTodoTask, (err) => {
+  //   if (err) {
+  //     req.flash('error_msg', 'Something wrong(');
+  //     return res.redirect('/');
+  //   }
+  //
+  // });
+  console.log('success');
+  res.redirect('https://www.google.com.ua');
 });
 
 module.exports = router;

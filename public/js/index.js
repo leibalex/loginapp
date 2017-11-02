@@ -17,16 +17,4 @@ $.when($.ready).then(() => {
     const text = passLength <= 20 ? `${passLength * 5}%` : '100%';
     $('#progress-bar').width(step * (passLength)).text(text);
   });
-
-  $('#send_activity').submit(function () {
-    const str = $(this).serialize();
-    $.ajax({
-      url: 'users/addActivity',
-      method: 'POST',
-      data: str,
-      error(err) {
-        console.log(err);
-      },
-    });
-  });
 });

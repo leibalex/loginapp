@@ -12,6 +12,9 @@ const mongoose = require('mongoose');
 mongoose.connect('mongodb://localhost:27017/loginapp');
 const db = mongoose.connection;
 
+db.on('error', console.error.bind(console, 'No connect to db'));
+db.once('open', console.log.bind(console, 'Success connection'));
+
 const routes = require('./routes/index');
 const users = require('./routes/users');
 
@@ -72,4 +75,3 @@ app.set('port', (process.env.PORT || 3000));
 app.listen(app.get('port'), () => {
   console.log(`Server started on port: ${app.get('port')}`);
 });
-
